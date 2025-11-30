@@ -3,6 +3,8 @@ import { Plus, Search, Edit, Trash2, X, Users as UsersIcon } from 'lucide-react'
 import axios from 'axios';
 import type { LoginResponse } from '../types';
 
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
+
 interface Usuario {
   id: number;
   username: string;
@@ -54,7 +56,7 @@ export default function UsuariosPage({ user }: UsuariosPageProps) {
   const loadUsuarios = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`http://localhost:8080/api/users/company/${user.companyId}`);
+      const response = await axios.get(`${API_BASE}/users/company/${user.companyId}`);
       setUsuarios(response.data);
     } catch (error) {
       console.error('Error loading usuarios:', error);
@@ -66,7 +68,7 @@ export default function UsuariosPage({ user }: UsuariosPageProps) {
 
   const loadProfiles = async () => {
     try {
-      const response = await axios.get(`http://localhost:8080/api/company-profiles/by-company/${user.companyId}`);
+      const response = await axios.get(`${API_BASE}/company-profiles/by-company/${user.companyId}`);
       setProfiles(response.data);
     } catch (error) {
       console.error('Error loading profiles:', error);
@@ -94,7 +96,7 @@ export default function UsuariosPage({ user }: UsuariosPageProps) {
     // Load user's profiles
     let userProfileIds: number[] = [];
     try {
-      const response = await axios.get(`http://localhost:8080/api/users/${usuario.id}/profiles`);
+      const response = await axios.get(`${API_BASE}/users/${usuario.id}/profiles`);
       userProfileIds = response.data;
     } catch (error) {
       console.error('Error loading user profiles:', error);
@@ -123,9 +125,9 @@ export default function UsuariosPage({ user }: UsuariosPageProps) {
       };
 
       if (editingUser) {
-        await axios.put(`http://localhost:8080/api/users/${editingUser.id}`, userData);
+        await axios.put(`${API_BASE}/users/${editingUser.id}`, userData);
       } else {
-        await axios.post('http://localhost:8080/api/users', userData);
+        await axios.post(`${API_BASE}/users`, userData);
       }
 
       setShowModal(false);
@@ -148,7 +150,7 @@ export default function UsuariosPage({ user }: UsuariosPageProps) {
     if (!confirm('¿Está seguro de eliminar este usuario?')) return;
 
     try {
-      await axios.delete(`http://localhost:8080/api/users/${id}`);
+      await axios.delete(`${API_BASE}/users/${id}`);
       loadUsuarios();
     } catch (error) {
       console.error('Error deleting user:', error);

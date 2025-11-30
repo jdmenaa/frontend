@@ -9,6 +9,8 @@ import { LoginResponse, WorkflowNode, WorkflowDefinition, User as UserType, Comp
 import { workflowApi, userApi } from '../api/workflows';
 import axios from 'axios';
 
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
+
 interface WorkflowBuilderProps {
   user: LoginResponse;
   onLogout: () => void;
@@ -171,7 +173,7 @@ export default function WorkflowBuilder({ user, onLogout }: WorkflowBuilderProps
 
   const loadProfiles = async () => {
     try {
-      const response = await axios.get(`http://localhost:8080/api/company-profiles/by-company/${user.companyId}`);
+      const response = await axios.get(`${API_BASE}/company-profiles/by-company/${user.companyId}`);
       setProfiles(response.data);
     } catch (error) {
       console.error('Error loading profiles:', error);
@@ -180,7 +182,7 @@ export default function WorkflowBuilder({ user, onLogout }: WorkflowBuilderProps
 
   const loadRoles = async () => {
     try {
-      const response = await axios.get(`http://localhost:8080/api/company-roles/by-company/${user.companyId}`);
+      const response = await axios.get(`${API_BASE}/company-roles/by-company/${user.companyId}`);
       setRoles(response.data);
     } catch (error) {
       console.error('Error loading roles:', error);
