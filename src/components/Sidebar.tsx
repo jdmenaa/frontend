@@ -93,7 +93,7 @@ const menuItems: MenuItem[] = [
         label: 'Nueva Solicitud',
         icon: <Send className="w-4 h-4" />,
         path: '/new-request',
-        executorOnly: true
+        adminOnly: true
       },
       {
         id: 'bandeja-entrada',

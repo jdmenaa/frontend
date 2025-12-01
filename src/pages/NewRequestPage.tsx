@@ -32,9 +32,9 @@ export default function NewRequestPage({ user }: NewRequestPageProps) {
   const [amount, setAmount] = useState('');
 
   useEffect(() => {
-    // Validar que el usuario tenga rol EJECUTOR o ADMIN
-    if (user.role !== 'EXECUTOR' && user.role !== 'ADMIN') {
-      setError('No tienes permisos para iniciar solicitudes. Solo usuarios con perfil EJECUTOR pueden crear solicitudes.');
+    // Validar que el usuario tenga rol ADMIN
+    if (user.role !== 'ADMIN') {
+      setError('No tienes permisos para iniciar solicitudes. Solo los administradores pueden crear solicitudes de aprobación.');
       setLoading(false);
       return;
     }
