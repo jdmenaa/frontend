@@ -13,7 +13,8 @@ import {
   Menu,
   X,
   Package,
-  FileStack
+  FileStack,
+  Send
 } from 'lucide-react';
 import { LoginResponse } from '../types';
 
@@ -24,6 +25,7 @@ interface MenuItem {
   path?: string;
   children?: MenuItem[];
   adminOnly?: boolean;
+  executorOnly?: boolean;
 }
 
 interface SidebarProps {
@@ -87,6 +89,13 @@ const menuItems: MenuItem[] = [
         adminOnly: true
       },
       {
+        id: 'nueva-solicitud',
+        label: 'Nueva Solicitud',
+        icon: <Send className="w-4 h-4" />,
+        path: '/new-request',
+        executorOnly: true
+      },
+      {
         id: 'bandeja-entrada',
         label: 'Bandeja de Entrada',
         icon: <Inbox className="w-4 h-4" />,
@@ -110,12 +119,14 @@ export default function Sidebar({ user }: SidebarProps) {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   const isAdmin = user.role === 'ADMIN';
+  const isExecutor = user.role === 'EXECUTOR';
 
   // Debug: Verificar el rol del usuario
   console.log('=== SIDEBAR DEBUG ===');
   console.log('Usuario:', user.username);
   console.log('Role:', user.role);
   console.log('Is Admin:', isAdmin);
+  console.log('Is Executor:', isExecutor);
 
   // Filtrar menú según el rol del usuario
   const filteredMenuItems = menuItems.map(item => {
@@ -128,11 +139,17 @@ export default function Sidebar({ user }: SidebarProps) {
     // Filtrar los children si existen
     if (item.children) {
       const filteredChildren = item.children.filter(child => {
-        const shouldShow = !child.adminOnly || isAdmin;
-        if (!shouldShow) {
+        // Validar adminOnly
+        if (child.adminOnly && !isAdmin) {
           console.log(`Ocultando submenú: ${child.label} (adminOnly)`);
+          return false;
         }
-        return shouldShow;
+        // Validar executorOnly
+        if (child.executorOnly && !isExecutor && !isAdmin) {
+          console.log(`Ocultando submenú: ${child.label} (executorOnly)`);
+          return false;
+        }
+        return true;
       });
 
       // Si no quedan children después del filtro, no mostrar el parent

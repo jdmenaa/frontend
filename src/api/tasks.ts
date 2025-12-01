@@ -2,6 +2,11 @@ import { apiClient } from './client';
 import { ApprovalTask } from '../types';
 
 export const taskApi = {
+  getAll: async (userId: number): Promise<ApprovalTask[]> => {
+    const response = await apiClient.get(`/tasks/user/${userId}`);
+    return response.data;
+  },
+
   getPending: async (userId: number): Promise<ApprovalTask[]> => {
     const response = await apiClient.get(`/tasks/user/${userId}/pending`);
     return response.data;

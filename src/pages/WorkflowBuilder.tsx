@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Building2, LogOut, ArrowLeft, Save, User, CheckCircle, Zap, Trash2 } from 'lucide-react';
+import { Building2, LogOut, ArrowLeft, Save, User, CheckCircle, Zap, Trash2, Info, HelpCircle, AlertCircle as AlertCircleIcon, Users } from 'lucide-react';
 import { DndContext, DragEndEvent, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { useSortable } from '@dnd-kit/sortable';
@@ -144,6 +144,7 @@ export default function WorkflowBuilder({ user, onLogout }: WorkflowBuilderProps
   const [showNodeEditor, setShowNodeEditor] = useState(false);
   const [editingNode, setEditingNode] = useState<WorkflowNode | null>(null);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [showHelp, setShowHelp] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -316,6 +317,14 @@ export default function WorkflowBuilder({ user, onLogout }: WorkflowBuilderProps
 
             <div className="flex items-center space-x-4">
               <button
+                onClick={() => setShowHelp(!showHelp)}
+                className="flex items-center space-x-2 px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors"
+              >
+                <HelpCircle className="w-4 h-4" />
+                <span>Ayuda</span>
+              </button>
+
+              <button
                 onClick={handleSaveWorkflow}
                 disabled={loading}
                 className="btn-primary flex items-center space-x-2"
@@ -331,6 +340,147 @@ export default function WorkflowBuilder({ user, onLogout }: WorkflowBuilderProps
           </div>
         </div>
       </header>
+
+      {/* Help Section */}
+      {showHelp && (
+        <div className="bg-blue-50 border-b border-blue-200">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex items-center space-x-2">
+                  <Info className="w-6 h-6 text-blue-600" />
+                  <h3 className="text-lg font-bold text-gray-900">Guía de Flujos de Aprobación</h3>
+                </div>
+                <button
+                  onClick={() => setShowHelp(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Flujo Secuencial */}
+                <div className="bg-blue-50 rounded-lg p-4">
+                  <div className="flex items-center space-x-2 mb-3">
+                    <CheckCircle className="w-5 h-5 text-blue-600" />
+                    <h4 className="font-semibold text-gray-900">Flujo Secuencial de Aprobaciones</h4>
+                  </div>
+                  <ul className="space-y-2 text-sm text-gray-700">
+                    <li className="flex items-start">
+                      <span className="font-medium mr-2">Nivel 0:</span>
+                      <span>Primer nivel (generalmente EJECUTOR)</span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="font-medium mr-2">Nivel 1:</span>
+                      <span>Segundo nivel (primer APROBADOR)</span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="font-medium mr-2">Nivel 2+:</span>
+                      <span>Niveles subsecuentes</span>
+                    </li>
+                    <li className="mt-2 p-2 bg-white rounded border border-blue-200">
+                      <strong>✓ Regla:</strong> Para avanzar al siguiente nivel, TODOS los usuarios del nivel actual deben APROBAR
+                    </li>
+                  </ul>
+                </div>
+
+                {/* Notificaciones Simultáneas */}
+                <div className="bg-green-50 rounded-lg p-4">
+                  <div className="flex items-center space-x-2 mb-3">
+                    <Users className="w-5 h-5 text-green-600" />
+                    <h4 className="font-semibold text-gray-900">Notificaciones Simultáneas</h4>
+                  </div>
+                  <ul className="space-y-2 text-sm text-gray-700">
+                    <li>
+                      Si múltiples usuarios pertenecen al mismo perfil/rol en el mismo nivel, TODOS reciben notificación SIMULTÁNEAMENTE
+                    </li>
+                    <li className="mt-2">
+                      <strong>Ejemplo:</strong> Si "Perfil Aprobador L1" tiene 3 personas (María, Juan, Pedro), las 3 reciben la tarea al mismo tiempo
+                    </li>
+                    <li className="mt-2 p-2 bg-white rounded border border-green-200">
+                      <strong>✓ Beneficio:</strong> Mayor velocidad y flexibilidad en aprobaciones
+                    </li>
+                  </ul>
+                </div>
+
+                {/* Manejo de Rechazos */}
+                <div className="bg-red-50 rounded-lg p-4">
+                  <div className="flex items-center space-x-2 mb-3">
+                    <AlertCircleIcon className="w-5 h-5 text-red-600" />
+                    <h4 className="font-semibold text-gray-900">Manejo de Rechazos</h4>
+                  </div>
+                  <ul className="space-y-2 text-sm text-gray-700">
+                    <li>
+                      Si UN SOLO aprobador rechaza:
+                    </li>
+                    <li className="ml-4">
+                      • Su tarea se marca como REJECTED
+                    </li>
+                    <li className="ml-4">
+                      • Se CANCELAN automáticamente las demás tareas PENDING del mismo nivel
+                    </li>
+                    <li className="ml-4">
+                      • El workflow completo queda en REJECTED
+                    </li>
+                    <li className="ml-4">
+                      • NO se crean más tareas de niveles siguientes
+                    </li>
+                    <li className="mt-2 p-2 bg-white rounded border border-red-200">
+                      <strong>⚠ Importante:</strong> Un rechazo termina todo el flujo inmediatamente
+                    </li>
+                  </ul>
+                </div>
+
+                {/* Tipos de Asignación */}
+                <div className="bg-yellow-50 rounded-lg p-4">
+                  <div className="flex items-center space-x-2 mb-3">
+                    <User className="w-5 h-5 text-yellow-600" />
+                    <h4 className="font-semibold text-gray-900">Tipos de Asignación</h4>
+                  </div>
+                  <ul className="space-y-2 text-sm text-gray-700">
+                    <li>
+                      <strong>Por USUARIO:</strong> Se asigna directamente a un usuario específico
+                    </li>
+                    <li>
+                      <strong>Por PERFIL:</strong> Se crean tareas para TODOS los usuarios con ese perfil (simultáneas)
+                    </li>
+                    <li>
+                      <strong>Por ROL:</strong> Se buscan todos los perfiles con ese rol y se crean tareas para sus usuarios
+                    </li>
+                    <li className="mt-2 p-2 bg-white rounded border border-yellow-200">
+                      <strong>💡 Tip:</strong> Solo usuarios ACTIVOS recibirán tareas
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
+              {/* Example Scenario */}
+              <div className="mt-6 bg-gray-50 rounded-lg p-4">
+                <h4 className="font-semibold text-gray-900 mb-3">📋 Ejemplo Completo</h4>
+                <div className="text-sm text-gray-700 space-y-2">
+                  <p><strong>Configuración:</strong></p>
+                  <ul className="ml-4 space-y-1">
+                    <li>• Nivel 0: Perfil "Ejecutores" → Ana, Luis</li>
+                    <li>• Nivel 1: Perfil "Aprobadores L1" → María, Juan, Pedro</li>
+                    <li>• Nivel 2: Perfil "Aprobadores L2" → Carlos</li>
+                  </ul>
+                  <p className="mt-3"><strong>Flujo Exitoso:</strong></p>
+                  <ol className="ml-4 space-y-1 list-decimal">
+                    <li>Ana crea solicitud → Ana y Luis reciben tarea simultánea</li>
+                    <li>Ana aprueba → Esperando a Luis...</li>
+                    <li>Luis aprueba → Se crean tareas para María, Juan, Pedro (simultáneas)</li>
+                    <li>María aprueba → Esperando...</li>
+                    <li>Juan aprueba → Esperando...</li>
+                    <li>Pedro aprueba → Se crea tarea para Carlos</li>
+                    <li>Carlos aprueba → ✅ Workflow COMPLETADO</li>
+                  </ol>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

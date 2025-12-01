@@ -4,6 +4,7 @@ import LoginPage from './pages/LoginPage';
 import WorkflowBuilder from './pages/WorkflowBuilder';
 import WorkflowsListPage from './pages/WorkflowsListPage';
 import Inbox from './pages/Inbox';
+import NewRequestPage from './pages/NewRequestPage';
 import UsuariosPage from './pages/UsuariosPage';
 import RolesPage from './pages/RolesPage';
 import PerfilesPage from './pages/PerfilesPage';
@@ -158,6 +159,20 @@ function App() {
               <ProtectedRoute user={user} requireAdmin>
                 <Layout user={user} onLogout={handleLogout}>
                   <WorkflowBuilder user={user} onLogout={handleLogout} />
+                </Layout>
+              </ProtectedRoute>
+            ) : (
+              <Navigate to="/" replace />
+            )
+          }
+        />
+        <Route
+          path="/new-request"
+          element={
+            user ? (
+              <ProtectedRoute user={user} requireExecutor>
+                <Layout user={user} onLogout={handleLogout}>
+                  <NewRequestPage user={user} />
                 </Layout>
               </ProtectedRoute>
             ) : (

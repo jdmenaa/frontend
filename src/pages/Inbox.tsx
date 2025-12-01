@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
-import { Clock, DollarSign, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
-import { LoginResponse, ApprovalTask } from '../types';
+import { Clock, DollarSign, CheckCircle, XCircle, AlertCircle, Filter } from 'lucide-react';
+import { LoginResponse, ApprovalTask, TaskStatus } from '../types';
 import { taskApi } from '../api/tasks';
 
 interface InboxProps {
   user: LoginResponse;
   onLogout: () => void;
 }
+
+type StatusFilter = 'ALL' | TaskStatus;
 
 export default function Inbox({ user }: InboxProps) {
   const [tasks, setTasks] = useState<ApprovalTask[]>([]);
@@ -16,6 +18,7 @@ export default function Inbox({ user }: InboxProps) {
   const [comments, setComments] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [actionType, setActionType] = useState<'approve' | 'reject'>('approve');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>(TaskStatus.PENDING);
 
   useEffect(() => {
     loadTasks();
@@ -23,7 +26,7 @@ export default function Inbox({ user }: InboxProps) {
 
   const loadTasks = async () => {
     try {
-      const data = await taskApi.getPending(user.userId);
+      const data = await taskApi.getAll(user.userId);
       setTasks(data);
     } catch (error) {
       console.error('Error loading tasks:', error);
@@ -31,6 +34,45 @@ export default function Inbox({ user }: InboxProps) {
       setLoading(false);
     }
   };
+
+  const getStatusBadge = (status: string) => {
+    switch(status) {
+      case TaskStatus.PENDING:
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+            Pendiente
+          </span>
+        );
+      case TaskStatus.APPROVED:
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+            Aprobada
+          </span>
+        );
+      case TaskStatus.REJECTED:
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+            Rechazada
+          </span>
+        );
+      case TaskStatus.CANCELLED:
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+            Cancelada
+          </span>
+        );
+      default:
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+            {status}
+          </span>
+        );
+    }
+  };
+
+  const filteredTasks = statusFilter === 'ALL'
+    ? tasks
+    : tasks.filter(task => task.status === statusFilter);
 
   const openActionModal = (task: ApprovalTask, type: 'approve' | 'reject') => {
     setSelectedTask(task);
@@ -89,6 +131,64 @@ export default function Inbox({ user }: InboxProps) {
         </div>
       </div>
 
+      {/* Filters */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+        <div className="flex items-center gap-2 flex-wrap">
+          <Filter className="w-5 h-5 text-gray-500" />
+          <span className="text-sm font-medium text-gray-700">Filtrar por estado:</span>
+          <button
+            onClick={() => setStatusFilter('ALL')}
+            className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
+              statusFilter === 'ALL'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            Todas ({tasks.length})
+          </button>
+          <button
+            onClick={() => setStatusFilter(TaskStatus.PENDING)}
+            className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
+              statusFilter === TaskStatus.PENDING
+                ? 'bg-yellow-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            Pendientes ({tasks.filter(t => t.status === TaskStatus.PENDING).length})
+          </button>
+          <button
+            onClick={() => setStatusFilter(TaskStatus.APPROVED)}
+            className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
+              statusFilter === TaskStatus.APPROVED
+                ? 'bg-green-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            Aprobadas ({tasks.filter(t => t.status === TaskStatus.APPROVED).length})
+          </button>
+          <button
+            onClick={() => setStatusFilter(TaskStatus.REJECTED)}
+            className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
+              statusFilter === TaskStatus.REJECTED
+                ? 'bg-red-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            Rechazadas ({tasks.filter(t => t.status === TaskStatus.REJECTED).length})
+          </button>
+          <button
+            onClick={() => setStatusFilter(TaskStatus.CANCELLED)}
+            className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
+              statusFilter === TaskStatus.CANCELLED
+                ? 'bg-gray-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            Canceladas ({tasks.filter(t => t.status === TaskStatus.CANCELLED).length})
+          </button>
+        </div>
+      </div>
+
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-2.5">
@@ -96,7 +196,7 @@ export default function Inbox({ user }: InboxProps) {
             <div>
               <p className="text-gray-500 text-xs font-medium">Pendientes</p>
               <p className="text-xl font-bold mt-0.5" style={{color: '#4c71fc'}}>
-                {tasks.filter((t) => t.status === 'PENDING').length}
+                {tasks.filter((t) => t.status === TaskStatus.PENDING).length}
               </p>
             </div>
             <div className="p-1.5 rounded-lg bg-yellow-500">
@@ -110,7 +210,7 @@ export default function Inbox({ user }: InboxProps) {
             <div>
               <p className="text-gray-500 text-xs font-medium">Urgentes</p>
               <p className="text-xl font-bold mt-0.5" style={{color: '#4c71fc'}}>
-                {tasks.filter((t) => t.isUrgent).length}
+                {tasks.filter((t) => t.isUrgent && t.status === TaskStatus.PENDING).length}
               </p>
             </div>
             <div className="p-1.5 rounded-lg bg-red-500">
@@ -137,7 +237,11 @@ export default function Inbox({ user }: InboxProps) {
         <div className="card">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-gray-900">
-              Pendientes ({tasks.filter((t) => t.status === 'PENDING').length})
+              {statusFilter === 'ALL' ? 'Todas las Tareas' :
+               statusFilter === TaskStatus.PENDING ? 'Tareas Pendientes' :
+               statusFilter === TaskStatus.APPROVED ? 'Tareas Aprobadas' :
+               statusFilter === TaskStatus.REJECTED ? 'Tareas Rechazadas' :
+               'Tareas Canceladas'} ({filteredTasks.length})
             </h2>
           </div>
 
@@ -146,14 +250,16 @@ export default function Inbox({ user }: InboxProps) {
               <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
               <p className="mt-4 text-gray-600">Cargando tareas...</p>
             </div>
-          ) : tasks.length === 0 ? (
+          ) : filteredTasks.length === 0 ? (
             <div className="text-center py-12">
               <CheckCircle className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-600">No hay tareas pendientes</p>
+              <p className="text-gray-600">
+                {statusFilter === 'ALL' ? 'No hay tareas' : `No hay tareas ${statusFilter === TaskStatus.PENDING ? 'pendientes' : statusFilter === TaskStatus.APPROVED ? 'aprobadas' : statusFilter === TaskStatus.REJECTED ? 'rechazadas' : 'canceladas'}`}
+              </p>
             </div>
           ) : (
             <div className="space-y-4">
-              {tasks.map((task) => (
+              {filteredTasks.map((task) => (
                 <div
                   key={task.id}
                   className={`border rounded-lg p-6 transition-all ${
@@ -164,8 +270,8 @@ export default function Inbox({ user }: InboxProps) {
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <div className="flex items-center space-x-3 mb-2">
-                        {task.isUrgent && (
+                      <div className="flex items-center space-x-3 mb-2 flex-wrap">
+                        {task.isUrgent && task.status === TaskStatus.PENDING && (
                           <AlertCircle className="w-5 h-5 text-danger" />
                         )}
                         <h3 className="text-lg font-semibold text-gray-900">
@@ -173,6 +279,10 @@ export default function Inbox({ user }: InboxProps) {
                         </h3>
                         <span className="px-3 py-1 bg-primary-100 text-primary-700 rounded-full text-xs font-medium">
                           {task.requestType}
+                        </span>
+                        {getStatusBadge(task.status)}
+                        <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-xs font-medium">
+                          Nivel {task.sequence}
                         </span>
                       </div>
 
@@ -202,25 +312,34 @@ export default function Inbox({ user }: InboxProps) {
                       </div>
                     </div>
 
-                    <div className="ml-4 flex flex-col space-y-2">
-                      <button
-                        onClick={() => openActionModal(task, 'approve')}
-                        className="btn-success flex items-center space-x-2 min-w-[120px]"
-                        disabled={actionLoading === task.id}
-                      >
-                        <CheckCircle className="w-4 h-4" />
-                        <span>Aprobar</span>
-                      </button>
+                    {task.status === TaskStatus.PENDING && (
+                      <div className="ml-4 flex flex-col space-y-2">
+                        <button
+                          onClick={() => openActionModal(task, 'approve')}
+                          className="btn-success flex items-center space-x-2 min-w-[120px]"
+                          disabled={actionLoading === task.id}
+                        >
+                          <CheckCircle className="w-4 h-4" />
+                          <span>Aprobar</span>
+                        </button>
 
-                      <button
-                        onClick={() => openActionModal(task, 'reject')}
-                        className="btn-danger flex items-center space-x-2 min-w-[120px]"
-                        disabled={actionLoading === task.id}
-                      >
-                        <XCircle className="w-4 h-4" />
-                        <span>Rechazar</span>
-                      </button>
-                    </div>
+                        <button
+                          onClick={() => openActionModal(task, 'reject')}
+                          className="btn-danger flex items-center space-x-2 min-w-[120px]"
+                          disabled={actionLoading === task.id}
+                        >
+                          <XCircle className="w-4 h-4" />
+                          <span>Rechazar</span>
+                        </button>
+                      </div>
+                    )}
+
+                    {task.status !== TaskStatus.PENDING && task.comments && (
+                      <div className="ml-4 bg-gray-50 rounded-lg p-3 max-w-xs">
+                        <p className="text-xs font-medium text-gray-700 mb-1">Comentarios:</p>
+                        <p className="text-sm text-gray-600">{task.comments}</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
