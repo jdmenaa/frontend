@@ -97,13 +97,36 @@ function AppContent() {
     )
   }
 
+  function handleOpenBrowser(): void {
+    sendToNative('OPEN_BROWSER', { url: 'https://www.google.com' })
+  }
+
+  function handleWebviewError(): void {
+    reportErrorToNative('TEST_ERROR', 'Error de prueba enviado desde la SPA')
+  }
+
   // Después de SESSION_INIT: pantalla de bienvenida
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 gap-2">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 gap-6">
       <h1 className="text-4xl font-bold text-primary-600">Bienvenido a Blu-Benefits</h1>
       {session && (
         <p className="text-gray-400 text-sm">Cédula: {session.cedula}</p>
       )}
+
+      <div className="flex flex-col gap-3 mt-4">
+        <button
+          onClick={handleOpenBrowser}
+          className="px-6 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 active:bg-blue-800"
+        >
+          Probar OPEN_BROWSER
+        </button>
+        <button
+          onClick={handleWebviewError}
+          className="px-6 py-2 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600 active:bg-red-700"
+        >
+          Probar WEBVIEW_ERROR
+        </button>
+      </div>
     </div>
   )
 }
